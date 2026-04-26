@@ -46,7 +46,7 @@ public:
     );
 private:
     void onConnect(BLEClient*);
-    void onDisconnect(BLEClient*);
+    void onDisconnect(BLEClient*, int reason);
 
     bool& connected;
     void (* const onConnectCallback)();

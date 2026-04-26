@@ -16,14 +16,15 @@ int BLEMidiClientClass::scan()
     pBLEScan->setWindow(99);
     pBLEScan->clearResults();
     foundMidiDevices.clear();
-    BLEScanResults foundDevices = pBLEScan->start(3);
+    BLEScanResults foundDevices = pBLEScan->getResults(3000);
     debug.printf("Found %d BLE device(s)\n", foundDevices.getCount());
     for(int i=0; i<foundDevices.getCount(); i++) {
-        BLEAdvertisedDevice device = foundDevices.getDevice(i);
-        auto deviceStr = "name = \"" + device.getName() + "\", address = "  + device.getAddress().toString();
-        if (device.haveServiceUUID() && device.isAdvertisingService(BLEUUID(MIDI_SERVICE_UUID))) {
+        const BLEAdvertisedDevice* pDevice = foundDevices.getDevice(i);
+        if(!pDevice) continue;
+        auto deviceStr = "name = \"" + pDevice->getName() + "\", address = " + pDevice->getAddress().toString();
+        if (pDevice->haveServiceUUID() && pDevice->isAdvertisingService(BLEUUID(MIDI_SERVICE_UUID))) {
             debug.println((" - BLE MIDI device : " + deviceStr).c_str());
-            foundMidiDevices.push_back(device);
+            foundMidiDevices.push_back(*pDevice);
         }
         else
             debug.println((" - Other type of BLE device : " + deviceStr).c_str());
@@ -113,7 +114,7 @@ void ClientCallbacks::onConnect(BLEClient *pClient)
         onConnectCallback();
 }
 
-void ClientCallbacks::onDisconnect(BLEClient *pClient)
+void ClientCallbacks::onDisconnect(BLEClient *pClient, int reason)
 {
     connected = false;
     if(onDisconnectCallback != nullptr)
