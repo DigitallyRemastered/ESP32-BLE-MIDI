@@ -38,14 +38,14 @@ void BLEMidiServerClass::sendPacket(uint8_t *packet, uint8_t packetSize)
     pCharacteristic->notify();
 }
 
-void BLEMidiServerClass::onConnect(BLEServer* pServer)
+void BLEMidiServerClass::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo)
 {
     connected = true;
     if(onConnectCallback != nullptr)
         onConnectCallback();
 }
 
-void BLEMidiServerClass::onDisconnect(BLEServer* pServer)
+void BLEMidiServerClass::onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason)
 {
     connected = false;
     if(onDisconnectCallback != nullptr)
@@ -55,12 +55,12 @@ void BLEMidiServerClass::onDisconnect(BLEServer* pServer)
 
 CharacteristicCallback::CharacteristicCallback(std::function<void(uint8_t*, uint8_t)> onWriteCallback) : onWriteCallback(onWriteCallback) {}
 
-void CharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
+void CharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic, NimBLEConnInfo& connInfo)
 {
-    std::string rxValue = pCharacteristic->getValue();
+    auto rxValue = pCharacteristic->getValue();
 
-    if (rxValue.length() > 0 && onWriteCallback != nullptr)
-        onWriteCallback((uint8_t*)rxValue.c_str(), rxValue.length());
+    if (rxValue.size() > 0 && onWriteCallback != nullptr)
+        onWriteCallback((uint8_t*)rxValue.data(), (uint8_t)rxValue.size());
 
     vTaskDelay(0);      // We leave some time for the IDLE task call esp_task_wdt_reset_watchdog
                         // See comment from atanisoft here : https://github.com/espressif/arduino-esp32/issues/2493

@@ -15,8 +15,8 @@ public:
 
 private:
     virtual void sendPacket(uint8_t *packet, uint8_t packetSize) override;
-    void onConnect(BLEServer* pServer) override;
-    void onDisconnect(BLEServer* pServer) override;
+    void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override;
+    void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override;
     
     void (*onConnectCallback)() = nullptr;
     void (*onDisconnectCallback)() = nullptr;
@@ -28,7 +28,7 @@ class CharacteristicCallback: public BLECharacteristicCallbacks {
 public:
     CharacteristicCallback(std::function<void(uint8_t*, uint8_t)> onWriteCallback);
 private:
-    void onWrite(BLECharacteristic *pCharacteristic);
+    void onWrite(BLECharacteristic *pCharacteristic, NimBLEConnInfo& connInfo);
     std::function<void(uint8_t*, uint8_t)> onWriteCallback = nullptr;
 };
 
