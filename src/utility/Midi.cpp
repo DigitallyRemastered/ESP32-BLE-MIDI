@@ -239,10 +239,43 @@ void Midi::receivePacket(uint8_t *data, uint8_t size)
                 break;
             }
 
-            case 0b1111:
-                debug.println("System common message, not implemented yet");
-                return;
+            case 0b1111: {
+                if(runningStatus != 0xF0) {
+                    debug.println("System common message, not implemented");
+                    return;
+                }
+                // SysEx: data bytes have bit7=0; message ends with an optional
+                // timestamp byte (bit7=1) followed by 0xF7.
+                // Note: multi-packet SysEx is not supported; messages larger
+                // than 256 bytes are silently truncated.
+                uint8_t sysExBuffer[256];
+                uint16_t sysExLen = 0;
+                while(ptr - data < size) {
+                    uint8_t b = *ptr;
+                    if(!(b & 0x80)) {
+                        // Data byte
+                        if(sysExLen < sizeof(sysExBuffer))
+                            sysExBuffer[sysExLen++] = b;
+                        ptr++;
+                    } else {
+                        // High bit set: timestamp byte before 0xF7, or 0xF7 itself
+                        if(b == 0xF7) {
+                            ptr++;  // consume end-of-sysex
+                        } else {
+                            // Timestamp byte — next byte must be 0xF7
+                            currentTimestamp = (currentTimestamp & 0b1111110000000) | (b & 0b1111111);
+                            ptr++;
+                            if(ptr - data < size && *ptr == 0xF7)
+                                ptr++;  // consume end-of-sysex
+                        }
+                        break;
+                    }
+                }
+                if(sysExCallback != nullptr)
+                    sysExCallback(sysExBuffer, sysExLen, currentTimestamp);
+                debug.printf("SysEx received, %d bytes\n", sysExLen);
                 break;
+            }
 
             default:
                 debug.println("Invalid packet");
@@ -406,6 +439,11 @@ void Midi::setPitchBendCallback(void (*callback)(uint8_t, uint8_t, uint8_t, uint
 void Midi::setPitchBendCallback(void (*callback)(uint8_t, uint16_t, uint16_t))
 {
     pitchBendCallback2 = callback;
+}
+
+void Midi::setSysExCallback(void (*callback)(uint8_t *, uint16_t, uint16_t))
+{
+    sysExCallback = callback;
 }
 
 void Midi::enableDebugging(Stream& debugStream) {

@@ -49,6 +49,7 @@ public:
     void setAfterTouchCallback(void (*callback)(uint8_t channel, uint8_t pressure, uint16_t timestamp));
     void setPitchBendCallback(void (*callback)(uint8_t channel, uint8_t lsb, uint8_t msb, uint16_t timestamp));
     void setPitchBendCallback(void (*callback)(uint8_t channel, uint16_t value, uint16_t timestamp));
+    void setSysExCallback(void (*callback)(uint8_t *data, uint16_t length, uint16_t timestamp));
 
     void enableDebugging(Stream& debugStream = Serial);
     void disableDebugging();
@@ -84,6 +85,7 @@ private:
     void (*afterTouchCallback)(uint8_t, uint8_t, uint16_t) = nullptr;
     void (*pitchBendCallback)(uint8_t, uint8_t, uint8_t, uint16_t) = nullptr;
     void (*pitchBendCallback2)(uint8_t, uint16_t, uint16_t) = nullptr;
+    void (*sysExCallback)(uint8_t *, uint16_t, uint16_t) = nullptr;
 
     uint16_t currentTimestamp = 0;
     
